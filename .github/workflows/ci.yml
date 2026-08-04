@@ -57,7 +57,7 @@ jobs:
             - name: Lista contenido que se publicaria
               run: npm pack --dry-run
 
-            - name: Falar si se colaron tests o workflows
+            - name: Fallar si se colaron tests o workflows
               run: |
                 npm pack --dry-run --json > pack.json
                 if grep -qE '"path": *"(test/|\.github/)' pack.json; then
