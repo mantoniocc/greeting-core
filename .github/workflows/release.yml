@@ -1,0 +1,106 @@
+name: Release
+
+on:
+    release: 
+        # 'published' y NO 'created': created tambien dispara al guardar
+        # un borrador, lo que publicaria un paquete que no querias sacar.
+        types: [published]
+
+# Piso de permisos para todo el workflow.
+permissions: 
+    contents: read
+
+jobs:
+    verify:
+        name: Verificar release
+        runs-on: ubuntu-latest
+        outputs:
+            version: ${{steps.check.outputs.version}}
+        steps:
+            - name: Checkout (tag del release)
+              uses: actions/checkout@v7
+
+            - name: Setup Node
+              uses: actions/setup-node@v7
+              with:
+                node-version-file: .nvmrc
+                cache: npm
+
+            - name: Install
+              run: npm ci
+
+            - name: El tag debe coincidir con package.json
+              id: check
+              env:
+                TAG: ${{github.event.release.tag_name}}
+              run: |
+                TAG_VERSION="${TAG#v}"
+                PKG_VERSION="$(npm pkg get version | tr -d '"')"
+
+                echo "Tag del release   : $TAG (version: $TAG_VERSION)"
+                echo "package.json"     : $PKG_VERSION
+
+                if [[ "$TAG_VERSION" != "$PKG_VERSION" ]]; then
+                    echo "::error::Desincronización: el tag dice '$TAG_VERSION' pero package.json dice '$PKG_VERSION'. Usá 'npm version' para bumpear y taggear de forma atómica."
+                    exit 1
+                fi
+
+                echo "version=$PKG_VERSION" >> "$GITHUB_OUTPUT"
+                echo "Versiones sincronizadas: $PKG_VERSION"
+
+            - name: Test
+              run: npm test
+            
+            - name: Verificar contenido del tarball
+              run: |
+                npm pack --dry-run --json > pack.json
+                if grep -qE '"path": *"(test/|\.github/)' pack.json; then
+                    echo "::error::El tarball incluye archivos que no deberían publicarse"
+                    exit 1
+                fi
+                npm pack --dry-run
+        
+    publish:
+        name: Publicar en Github Packages
+        runs-on: ubuntu-latest
+        needs: verify
+        # Unico job con permiso de escritura, y solo el que necesita
+        permissions: 
+            contents: read
+            packages: write
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v7
+
+            - name: Setup Node + registry de Github Packages
+              uses: actions/setup-node@v7
+              with:
+                node-version-file: .nvmrc
+                registry-url: https://npm.pkg.github.com
+                scope: mantoniocc
+                cache: npm
+            
+            - name: Install
+              run: npm ci
+
+            - name: Publicar
+              run: npm publish
+              env: 
+                # token efimero del workflow. NO es un PAT
+                NODE_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
+
+            - name: Resumen
+              env:
+                VERSION: ${{needs.verify.outputs.version}}
+              run: |
+                  {
+                    echo "## Publicado"
+                    echo ""
+                    echo "| | |"
+                    echo "|---|---|"
+                    echo "| Paquete | \`mantoniocc/greeting-core\` |"
+                    echo "| Versión | \`$VERSION\` |"
+                    echo "| Registry | \`npm.pkg.github.com\` |"
+                    echo "| Commit | \`${GITHUB_SHA:0:7}\` |"
+                  } >> "$GITHUB_STEP_SUMMARY"
+

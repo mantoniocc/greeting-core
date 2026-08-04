@@ -2,7 +2,11 @@
   "name": "mantoniocc@greeting-core",
   "version": "0.1.0",
   "description": "Libreria de saludo - lab de Github Packages",
-  "keywords": ["greeting", "lab", "github-packages"],
+  "keywords": [
+    "greeting",
+    "lab",
+    "github-packages"
+  ],
   "license": "MIT",
   "type": "module",
   "exports": {
@@ -16,7 +20,6 @@
   "engines": {
     "node": ">=22"
   },
-
   "repository": {
     "type": "git",
     "url": "git+https://github.com/mantoniocc/greeting-core.git"
@@ -28,5 +31,8 @@
   "scripts": {
     "test": "node --test",
     "test:coverage": "node --test --experimental-test-coverage"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
   }
 }
