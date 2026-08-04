@@ -77,7 +77,7 @@ jobs:
               with:
                 node-version-file: .nvmrc
                 registry-url: https://npm.pkg.github.com
-                scope: mantoniocc
+                scope: '@mantoniocc'
                 cache: npm
             
             - name: Install
@@ -98,7 +98,7 @@ jobs:
                     echo ""
                     echo "| | |"
                     echo "|---|---|"
-                    echo "| Paquete | \`mantoniocc/greeting-core\` |"
+                    echo "| Paquete | \`@mantoniocc/greeting-core\` |"
                     echo "| Versión | \`$VERSION\` |"
                     echo "| Registry | \`npm.pkg.github.com\` |"
                     echo "| Commit | \`${GITHUB_SHA:0:7}\` |"
