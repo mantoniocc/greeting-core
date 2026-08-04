@@ -12,7 +12,7 @@
  * 
  * @example
  * greet("Ada");                        // "Hello, Ada!"
- * greet("Ada", {locale: "es"});        // "Hola, Ada!"
+ * greet("Ada", {locale: "es"});        // "¡Hola, Ada!"
  * greet("Ada", {shout: true});         // "HELLO, ADA!"
  */
 
@@ -25,7 +25,7 @@ export function greet(name = "world", options = {}) {
 
     const templates = {
         en: (who) => `Hello, ${who}!`,
-        es: (who) => `Hola, ${who}!`
+        es: (who) => `¡Hola, ${who}!`
     }
 
     if (!(locale in templates)) {
