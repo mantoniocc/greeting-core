@@ -104,3 +104,70 @@ jobs:
                     echo "| Commit | \`${GITHUB_SHA:0:7}\` |"
                   } >> "$GITHUB_STEP_SUMMARY"
 
+    smoke-test:
+        name: Smoke test del paquete publicado
+        runs-on: ubuntu-latest
+        needs: [verify, publish]
+        permissions: 
+            contents: read
+            # Lectura del propio package del repo. NO se necesita PAT.
+            packages: read
+        steps:
+            - name: Setup Node + registry
+              uses: actions/setup-node@v7
+              with:
+                node-version: '24'
+                registry-url: https://npm.pkg.github.com
+                scope: '@mantoniocc'
+
+            - name: Esperar propagación del registry
+              run: sleep 15
+
+            - name: Instalar el paquete recien publicado
+              env:
+                NODE_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
+                VERSION: ${{needs.verify.outputs.version}}
+              run: |
+                mkdir -p /tmp/smoke && cd /tmp/smoke
+                npm init -y > /dev/null
+                npm install "@mantoniocc/greeting-core:$VERSION"
+                echo "Instalado desde el registry:"
+                npm ls "@mantoniocc/greeting-core"
+
+            - name: Verificar que la API publica funciona
+              run: |
+                cd /tmp/smoke
+                cat > smoke.mjs <<'EOF'
+                import assert from "node:assert/strict";
+                import { greet, SUPPORTED_LOCALES } from "@mantoniocc/greeting-core";
+
+                assert.equal(greet(), "Hello, world!");
+                assert.equal(greet("Ada", { locale: "es" }), "¡Hola, Ada!");
+                assert.ok(Array.isArray(SUPPORTED_LOCALES));
+                assert.ok(SUPPORTED_LOCALES.length > 0);
+
+                for (const locale of SUPPORTED_LOCALES) {
+                    assert.doesNotThrow(() => greet("Ada", { locale }));
+                }
+
+                console.log("Smoke test OK — el paquete publicado es consumible");
+                EOF
+                node smoke.mjs
+
+            - name: Verificar la integridad del lockfile
+              run: |
+                cd /tmp/smoke
+                node -e "
+                    const lock = require('./package-lock.json');
+                    const key = 'node_modules/@mantoniocc/greeting-core';
+                    const entry = lock.packages[key];
+                    if (!entry?.integrity?.startsWith('sha512-')) {
+                    console.error('::error::Sin hash de integridad en el lockfile');
+                    process.exit(1);
+                    }
+                    console.log('Resolved  :', entry.resolved);
+                    console.log('Integrity :', entry.integrity.slice(0, 40) + '...');
+                "
+          
+        
+
