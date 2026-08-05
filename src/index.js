@@ -25,8 +25,9 @@ export function greet(name = "world", options = {}) {
 
     const templates = {
         en: (who) => `Hello, ${who}!`,
-        es: (who) => `¡Hola, ${who}!`
-    }
+        es: (who) => `¡Hola, ${who}!`,
+        pt: (who) => `Olá, ${who}!`,
+    };
 
     if (!(locale in templates)) {
         throw new RangeError(
@@ -41,4 +42,4 @@ export function greet(name = "world", options = {}) {
 }
 
 /** Locales soportados por {@link greet}. */
-export const SUPPORTED_LOCALES = Object.freeze(["en", "es"]);
+export const SUPPORTED_LOCALES = Object.freeze(["en", "es", "pt"]);

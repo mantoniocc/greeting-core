@@ -35,6 +35,10 @@ test("opciones", async (t) => {
     assert.equal(greet("Ada", { locale: "es" }), "¡Hola, Ada!");
   });
 
+  await t.test("locale pt", () => {
+    assert.equal(greet("Ada", { locale: "pt" }), "Olá, Ada!");
+  });
+
   await t.test("shout y locale combinados", () => {
     assert.equal(greet("Ada", { shout: true, locale: "es" }), "¡HOLA, ADA!");
   });
