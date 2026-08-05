@@ -1,6 +1,6 @@
 {
   "name": "@mantoniocc/greeting-core",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Libreria de saludo - lab de Github Packages",
   "keywords": [
     "greeting",
