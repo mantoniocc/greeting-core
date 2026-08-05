@@ -130,7 +130,7 @@ jobs:
               run: |
                 mkdir -p /tmp/smoke && cd /tmp/smoke
                 npm init -y > /dev/null
-                npm install "@mantoniocc/greeting-core:$VERSION"
+                npm install "@mantoniocc/greeting-core@$VERSION"
                 echo "Instalado desde el registry:"
                 npm ls "@mantoniocc/greeting-core"
 
