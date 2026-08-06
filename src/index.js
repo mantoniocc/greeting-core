@@ -27,6 +27,7 @@ export function greet(name = "world", options = {}) {
         en: (who) => `Hello, ${who}!`,
         es: (who) => `¡Hola, ${who}!`,
         pt: (who) => `Olá, ${who}!`,
+        fr: (who) => `Bonjour, ${who} !`,
     };
 
     if (!(locale in templates)) {
@@ -42,4 +43,4 @@ export function greet(name = "world", options = {}) {
 }
 
 /** Locales soportados por {@link greet}. */
-export const SUPPORTED_LOCALES = Object.freeze(["en", "es", "pt"]);
+export const SUPPORTED_LOCALES = Object.freeze(["en", "es", "pt", "fr"]);

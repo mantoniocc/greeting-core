@@ -64,10 +64,14 @@ jobs:
         name: Publicar en Github Packages
         runs-on: ubuntu-latest
         needs: verify
-        # Unico job con permiso de escritura, y solo el que necesita
         permissions: 
             contents: read
             packages: write
+            # Mintea el token OIDC para pedir el certificado a Sigstore.
+            id-token: write
+            # Persiste la attestation en el store de Github
+            attestations: write
+
         steps:
             - name: Checkout
               uses: actions/checkout@v7
@@ -83,8 +87,23 @@ jobs:
             - name: Install
               run: npm ci
 
-            - name: Publicar
-              run: npm publish
+            # Empaquetamos UNA vez. Este archivo exacto es el que se
+            # atestigua y el que se publica: mismo byte, mismo digest.
+            - name: Empaquetar
+              id: pack
+              run: |
+                TARBALL="$(npm pack --silent)"
+                echo "tarball=$TARBALL" >> "$GITHUB_OUTPUT"
+                echo "Tarball: $TARBALL"
+                shasum -a 256 "$TARBALL"
+
+            - name: Generar attestation de procedencia
+              uses: actions/attest@v4
+              with:
+                subject-path: ${{steps.pack.outputs.tarball}}
+
+            - name: Publicar ese mismo tarball
+              run: npm publish "${{steps.pack.outputs.tarball}}"
               env: 
                 # token efimero del workflow. NO es un PAT
                 NODE_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
@@ -92,17 +111,25 @@ jobs:
             - name: Resumen
               env:
                 VERSION: ${{needs.verify.outputs.version}}
+                TARBALL: ${{steps.pack.outputs.tarball}}
               run: |
-                  {
-                    echo "## Publicado"
-                    echo ""
-                    echo "| | |"
-                    echo "|---|---|"
-                    echo "| Paquete | \`@mantoniocc/greeting-core\` |"
-                    echo "| Versión | \`$VERSION\` |"
-                    echo "| Registry | \`npm.pkg.github.com\` |"
-                    echo "| Commit | \`${GITHUB_SHA:0:7}\` |"
-                  } >> "$GITHUB_STEP_SUMMARY"
+                  DIGEST="$(shasum -a 256 "$TARBALL" | cut -d' ' -f1)"
+                    {
+                        echo "## Publicado"
+                        echo ""
+                        echo "| | |"
+                        echo "|---|---|"
+                        echo "| Paquete | \`@mantoniocc/greeting-core\` |"
+                        echo "| Versión | \`$VERSION\` |"
+                        echo "| SHA-256 | \`$DIGEST\` |"
+                        echo "| Commit | \`${GITHUB_SHA:0:7}\` |"
+                        echo "| Attestation | sí |"
+                        echo ""
+                        echo '```bash'
+                        echo "npm pack @mantoniocc/greeting-core@$VERSION"
+                        echo "gh attestation verify ./$TARBALL --owner mantoniocc"
+                        echo '```'
+                    } >> "$GITHUB_STEP_SUMMARY"
 
     smoke-test:
         name: Smoke test del paquete publicado

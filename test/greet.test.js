@@ -39,6 +39,10 @@ test("opciones", async (t) => {
     assert.equal(greet("Ada", { locale: "pt" }), "Olá, Ada!");
   });
 
+  await t.test("locale fr", () => {
+    assert.equal(greet("Ada", { locale: "fr" }), "Bonjour, Ada !");
+  });
+
   await t.test("shout y locale combinados", () => {
     assert.equal(greet("Ada", { shout: true, locale: "es" }), "¡HOLA, ADA!");
   });
@@ -51,7 +55,7 @@ test("validación de entrada", async (t) => {
   });
 
   await t.test("rechaza locale desconocido", () => {
-    assert.throws(() => greet("Ada", { locale: "fr" }), RangeError);
+    assert.throws(() => greet("Ada", { locale: "lat" }), RangeError);
   });
 });
 
