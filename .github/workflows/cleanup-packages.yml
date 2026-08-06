@@ -1,0 +1,40 @@
+name: Limpieza de versiones
+
+on:
+    schedule:
+        # Domingos 03:00 UTC
+        - cron: '0 3 * * 0'
+    workflow_dispatch: 
+        inputs:
+            dry_run:
+                description: 'Simular sin borrar'
+                type: boolean
+                default: true
+
+permissions: 
+    contents: read
+
+jobs:
+    cleanup:
+        name: Podar prerealeses viejas
+        runs-on: ubuntu-latest
+        permissions: 
+            packages: write
+        steps:
+            - name: Listar versiones actuales
+              env:
+                GH_TOKEN: ${{secrets.GITHUB_TOKEN}}
+              run: |
+                gh api "/user/packages/npm/greeting-core/versions" \
+                    --jq '.[] | "\(.name)\t\(.created_at)"' | column -t
+
+            - name: Podar
+              if: inputs.dry_run != true
+              uses: actions/delete-package-versions@v5
+              with:
+                package-name: greeting-core
+                package-type: npm
+                # Conservar siempre las ultimas N
+                min-versions-to-keep: 10
+                # Solo tocar prereleases. Nunca versiones estables.
+                ignore-versions: '^\d+\.\d+\.\d+$'
